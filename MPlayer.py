@@ -1,101 +1,163 @@
+from ast import Lambda
 from tkinter import *
-from tkinter import Tk
-from tkinter import ttk, filedialog
-from pygame import mixer
-from PIL import ImageTk, Image
-from mutagen.mp3 import MP3
-import os
+from tkinter import filedialog
+import tkinter
+import pygame
 
 
 #creating the root window
 root = Tk()
 root.title('SK Player')
-root.geometry("920x670+290+85")
-root.configure(bg="#0f1a2b")
-root.resizable(False, False)
+root.iconbitmap("images\logo.ico")
+root.geometry("500x300")
+
+#Add song function
 
 
-mixer.init()
+def add_song():
+    song = filedialog.askopenfilename(
+        initialdir='C:/Users/Shahbaz/Downloads/Songs', title='Choose song', filetypes=(('mp3 Files', '*.mp3'),))
+    song = song.replace("C:/Users/Shahbaz/Downloads/Songs/", "")
+    song_box.insert(END, song)
 
-def Add_Music():
-    path = filedialog.askdirectory()
-    if path:
-        os.chdir(path)
-        songs = os.listdir(path)
-
-        for song in songs:
-            if song.endswith(".mp3"):
-                Playlist.insert(END, song)
+#Add many song
 
 
-def Play_Music():
-    Music_Name = Playlist.get(ACTIVE)
-    audio = MP3(Music_Name)
-    print(audio.info.length)
-    print(Music_Name[0:-4])
-    mixer.music.load(Playlist.get(ACTIVE))
-    mixer.music.play()
-    my_progress.start(10)
+def add_many_song():
+    songs = filedialog.askopenfilenames(
+        initialdir='C:/Users/Shahbaz/Downloads/Songs', title='Choose song', filetypes=(('mp3 Files', '*.mp3'),))
+    for song in songs:
+        song = song.replace("C:/Users/Shahbaz/Downloads/Songs/", "")
+        song_box.insert(END, song)
 
-#def steps():
-#  my_progress.start(10)
+#Play Song function
 
 
-#Progress Bar
-my_progress = ttk.Progressbar(
-    root, orient=HORIZONTAL, length=300, mode='determinate')
-my_progress.pack(pady=20)
+def play():
+    song = song_box.get(ACTIVE)
+    song = f'C:/Users/Shahbaz/Downloads/Songs/{song}'
 
-#my_button = Button(root, text='Progress', command=steps)
-#my_button.pack(pady=20)
-
-
-#icon
-image_icon = PhotoImage(file="images/logo.png")
-root.iconphoto(False, image_icon)
+    pygame.mixer.music.load(song)
+    pygame.mixer.music.play(loops=0)
 
 
-# Play Button
-Play = Image.open("images/play button.png")
-Play = Play.resize((50, 50), Image.ANTIALIAS)
-Button_Play = ImageTk.PhotoImage(Play)
-Button(root, image=Button_Play, bg="#0f1a2b", bd=0,
-       command=Play_Music).place(x=100, y=400)
+#Stop playing current song
+def stop():
+    pygame.mixer.music.stop()
+    song_box.selection_clear(ACTIVE)
 
-# Stop Button
-Stop = Image.open("images/stop button.png")
-Stop = Stop.resize((50, 50), Image.ANTIALIAS)
-Button_Stop = ImageTk.PhotoImage(Stop)
-Button(root, image=Button_Stop, bg="#0f1a2b", bd=0,
-       command=mixer.music.stop).place(x=30, y=500)
 
-# Resume Button
-Resume = Image.open("images/resume button.png")
-Resume = Resume.resize((50, 50), Image.ANTIALIAS)
-Button_Resume = ImageTk.PhotoImage(Resume)
-Button(root, image=Button_Resume, bg="#0f1a2b", bd=0,
-       command=mixer.music.unpause).place(x=115, y=500)
+#Create global pause variable
+global paused
+paused = False
 
-# Pause Button
-Pause = Image.open("images/pause button.png")
-Pause = Pause.resize((50, 50), Image.ANTIALIAS)
-Button_Pause = ImageTk.PhotoImage(Pause)
-Button(root, image=Button_Pause, bg="#0f1a2b", bd=0,
-       command=mixer.music.pause).place(x=200, y=500)
+#Delete song
+def delete_songs():
+       song_box.delete(ANCHOR)
+       pygame.mixer.music.stop()
 
-#music
 
-Frame_Music = Frame(root, bd=2, relief=RIDGE)
-Frame_Music.place(x=330, y=350, width=500, height=200)
+def delete_all_songs():
+       song_box.config(state=NORMAL)
+       song_box.delete(0, END)
+       pygame.mixer.music.stop()
 
-Button(root, text="Add Music", width=15, height=2, font=("times new roman",
-       12, "bold"), fg="Black", bg="#21b3de", command=Add_Music).place(x=330, y=300)
+#Pause playing current song
+def pause(is_paused):
+    global paused
+    paused = is_paused
 
-Scroll = Scrollbar(Frame_Music)
-Playlist = Listbox(Frame_Music, width=100, font=("Times new roman", 10), bg="#333333",
-                   fg="grey", selectbackground="lightblue", cursor="hand2", bd=0, yscrollcommand=Scroll.set)
-Scroll.config(command=Playlist.yview)
-Scroll.pack(side=RIGHT, fill=Y)
-Playlist.pack(side=LEFT, fill=BOTH)
+    if paused:
+        #pause song
+        pygame.mixer.music.unpause()
+        paused = False
+    else:
+        #unpause
+        pygame.mixer.music.pause()
+        paused = True
+
+
+#Next Song play function
+def next_song():
+    next_one = song_box.curselection()
+    next_one = next_one[0]+1
+    song = song_box.get(next_one)
+    song = f'C:/Users/Shahbaz/Downloads/Songs/{song}'
+    pygame.mixer.music.load(song)
+    pygame.mixer.music.play(loops=0)
+    song_box.selection_clear(0, END)
+    song_box.activate(next_one)
+    song_box.selection_set(next_one, last=None)
+
+#Previous Song play function
+
+
+def prev_song():
+    next_one = song_box.curselection()
+    next_one = next_one[0]-1
+    song = song_box.get(next_one)
+    song = f'C:/Users/Shahbaz/Downloads/Songs/{song}'
+    pygame.mixer.music.load(song)
+    pygame.mixer.music.play(loops=0)
+    song_box.selection_clear(0, END)
+    song_box.activate(next_one)
+    song_box.selection_set(next_one, last=None)
+
+
+#Initialize Pygame Mixer
+pygame.mixer.init()
+
+song_box = Listbox(root, bg='black', fg='green', width=60,
+                   selectbackground='gray', selectforeground='black')
+song_box.pack(pady=20)
+
+
+#Define Player Control Buttons Images
+
+back_btn_img = PhotoImage(file="images/back_btn.png")
+forward_btn_img = PhotoImage(file="images/forward_btn.png")
+play_btn_img = PhotoImage(file="images/play_btn.png")
+pause_btn_img = PhotoImage(file="images/pause_btn.png")
+stop_btn_img = PhotoImage(file="images/stop_btn.png")
+
+#Create Player Control Frame
+controls_frame = Frame(root)
+controls_frame.pack()
+
+
+#Create Player Control Button
+back_btn = Button(controls_frame, image=back_btn_img,
+                  border=0, command=prev_song)
+forward_btn = Button(controls_frame, image=forward_btn_img,
+                     border=0, command=next_song)
+play_btn = Button(controls_frame, image=play_btn_img, border=0, command=play)
+pause_btn = Button(controls_frame, image=pause_btn_img,
+                   border=0, command=lambda: pause(paused))
+stop_btn = Button(controls_frame, image=stop_btn_img, border=0, command=stop)
+
+back_btn.grid(row=0, column=1)
+forward_btn.grid(row=0, column=2)
+play_btn.grid(row=0, column=3)
+pause_btn.grid(row=0, column=4)
+stop_btn.grid(row=0, column=5)
+
+#Create Menu
+my_menu = Menu(root)
+root.config(menu=my_menu)
+
+#Add song Menu
+add_song_menu = Menu(my_menu)
+my_menu.add_cascade(label="Add Song", menu=add_song_menu)
+add_song_menu.add_command(label='Add one song to playlist', command=add_song)
+
+#Add many song to playlist
+add_song_menu.add_command(
+    label='Add many song to playlist', command=add_many_song)
+
+#Delete song menu
+remove_song_menu=Menu(my_menu)
+my_menu.add_cascade(label='Remove Songs',menu=remove_song_menu)
+remove_song_menu.add_command(label='Delete a Song From Playlist',command=delete_songs)
+remove_song_menu.add_command(label='Delete a All Song From Playlist', command=delete_all_songs)
 
 root.mainloop()
